@@ -1,1 +1,0 @@
-select * from alembic_version
