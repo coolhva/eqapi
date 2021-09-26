@@ -8,3 +8,4 @@ eqapi.code-workspace
 __pycache__/
 db/app.db
 logs
+app.session.sql
