@@ -2,6 +2,7 @@ import logging
 from logging.handlers import SMTPHandler, RotatingFileHandler
 import os
 from flask import Flask
+from flask_apscheduler import APScheduler
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -18,6 +19,7 @@ login.login_message = 'Please log in to access this page.'
 mail = Mail()
 bootstrap = Bootstrap()
 moment = Moment()
+scheduler = APScheduler()
 
 
 def create_app(config_class=Config):
@@ -30,6 +32,8 @@ def create_app(config_class=Config):
     mail.init_app(app)
     bootstrap.init_app(app)
     moment.init_app(app)
+    scheduler.init_app(app)
+    scheduler.start()
 
     from app.errors import bp as errors_bp
     app.register_blueprint(errors_bp)
@@ -74,6 +78,11 @@ def create_app(config_class=Config):
 
         app.logger.setLevel(logging.INFO)
         app.logger.info('Eqapi startup')
+
+        from app.jobs import AddUpdateJob
+
+        with app.app_context():
+            AddUpdateJob()
 
     return app
 

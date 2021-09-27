@@ -40,20 +40,22 @@ def queryQueue() -> bool:
     try:
         r = requests.get(url, auth=HTTPBasicAuth(username, password))
     except RequestException as e:
-        saveSetting('lastError', f"{utcdatestr}: {e}")
+        saveSetting('last_error', f"{utcdatestr}: {e}")
         return False
 
     if r.status_code == 401:
-        saveSetting('lastError', f"{utcdatestr}: Invalid username or password")
+        saveSetting('last_error',
+                    f"{utcdatestr}: Invalid username or password")
         return False
     elif r.status_code == 403:
-        saveSetting('lastError', f"{utcdatestr}: User unauthorized to use API")
+        saveSetting('last_error',
+                    f"{utcdatestr}: User unauthorized to use API")
         return False
     elif r.status_code == 500:
-        saveSetting('lastError', f"{utcdatestr}: Remote server error")
+        saveSetting('last_error', f"{utcdatestr}: Remote server error")
         return False
     elif r.status_code != 200:
-        saveSetting('lastError', f"{utcdatestr}: Error {r.status_code}")
+        saveSetting('last_error', f"{utcdatestr}: Error {r.status_code}")
         return False
 
     data = json.loads(r.content)

@@ -1,7 +1,10 @@
 from flask import (render_template, flash, redirect, url_for, request,
                    current_app)
 from flask_login import current_user, login_required
+from datetime import datetime
+from sqlalchemy.sql.elements import and_
 from app import db
+from app.models import DomainQueue, GlobalQueue, Domain
 from app.main.forms import EditProfileForm, SettingsForm
 from app.settings import getSetting, saveSetting
 from app.api import testConnection, queryQueue
@@ -41,6 +44,107 @@ def queue():
     return render_template('queue.html', title='Queue')
 
 
+@bp.route('/data/<from_date>/<to_date>',
+          defaults={'domain': None}, methods=['GET'])
+@bp.route('/data/<from_date>/<to_date>/<domain>', methods=['GET'])
+@login_required
+def data(from_date, to_date, domain):
+
+    startdate = datetime.strptime(from_date, "%Y%m%d%H%M")
+    enddate = datetime.strptime(to_date, "%Y%m%d%H%M")
+
+    if domain is None:
+        # global queue
+
+        rdata = {
+            'labels': [],
+            'data': {
+                'TotalMessagesInbound': [],
+                'TotalMessagesOutbound': [],
+                'MeanTimeInQueueInbound': [],
+                'MeanTimeInQueueOutbound': [],
+                'LongestTimeInInbound': [],
+                'LongestTimeInOutbound': []
+                }
+            }
+
+        qdata = db.session.query(
+            GlobalQueue
+            ).filter(
+                GlobalQueue.datetime.between(startdate, enddate)
+            ).all()
+        for entry in qdata:
+            rdata['labels'].append(entry.datetime)
+            rdata['data']['TotalMessagesInbound'].append(
+                entry.TotalMessagesInbound)
+            rdata['data']['TotalMessagesOutbound'].append(
+                entry.TotalMessagesOutbound)
+            rdata['data']['MeanTimeInQueueInbound'].append(
+                entry.MeanTimeInQueueInbound)
+            rdata['data']['MeanTimeInQueueOutbound'].append(
+                entry.MeanTimeInQueueOutbound)
+            rdata['data']['LongestTimeInInbound'].append(
+                entry.LongestTimeInInbound)
+            rdata['data']['LongestTimeInOutbound'].append(
+                entry.LongestTimeInOutbound)
+    else:
+        # domain queue
+
+        rdata = {
+            'labels': [],
+            'data': {
+                'ReceiveQueueCountInbound': [],
+                'ReceiveQueueCountOutbound': [],
+                'DeliveryQueueCountInbound': [],
+                'DeliveryQueueCountOutbound': [],
+                'LongestTimeInReceiveQueueInbound': [],
+                'LongestTimeInReceiveQueueOutbound': [],
+                'LongestTimeInDeliveryQueueInbound': [],
+                'LongestTimeInDeliveryQueueOutbound': [],
+                'MeanTimeInReceiveQueueInbound': [],
+                'MeanTimeInReceiveQueueOutbound': [],
+                'MeanTimeInDeliveryQueueInbound': [],
+                'MeanTimeInDeliveryQueueOutbound': []
+                }
+            }
+
+        qdata = db.session.query(
+            DomainQueue
+            ).join(
+                Domain
+            ).filter(
+                and_(DomainQueue.datetime.between(startdate, enddate),
+                     Domain.domainname == domain)
+            ).all()
+        for entry in qdata:
+            rdata['labels'].append(entry.datetime)
+            rdata['data']['ReceiveQueueCountInbound'].append(
+                entry.ReceiveQueueCountInbound)
+            rdata['data']['ReceiveQueueCountOutbound'].append(
+                entry.ReceiveQueueCountOutbound)
+            rdata['data']['DeliveryQueueCountInbound'].append(
+                entry.DeliveryQueueCountInbound)
+            rdata['data']['DeliveryQueueCountOutbound'].append(
+                entry.DeliveryQueueCountOutbound)
+            rdata['data']['LongestTimeInReceiveQueueInbound'].append(
+                entry.LongestTimeInReceiveQueueInbound)
+            rdata['data']['LongestTimeInReceiveQueueOutbound'].append(
+                entry.LongestTimeInReceiveQueueOutbound)
+            rdata['data']['LongestTimeInDeliveryQueueInbound'].append(
+                entry.LongestTimeInDeliveryQueueInbound)
+            rdata['data']['LongestTimeInDeliveryQueueOutbound'].append(
+                entry.LongestTimeInDeliveryQueueOutbound)
+            rdata['data']['MeanTimeInReceiveQueueInbound'].append(
+                entry.MeanTimeInReceiveQueueInbound)
+            rdata['data']['MeanTimeInReceiveQueueOutbound'].append(
+                entry.MeanTimeInReceiveQueueOutbound)
+            rdata['data']['MeanTimeInDeliveryQueueInbound'].append(
+                entry.MeanTimeInDeliveryQueueInbound)
+            rdata['data']['MeanTimeInDeliveryQueueOutbound'].append(
+                entry.MeanTimeInDeliveryQueueOutbound)
+    return rdata
+
+
 @bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
@@ -59,4 +163,5 @@ def settings():
         form.api_username.data = getSetting('api_username')
         form.api_password.data = getSetting('api_password')
 
-    return render_template('settings.html', title='Settings', form=form)
+    return render_template('settings.html', title='Settings', form=form,
+                           last_error=getSetting('last_error'))

@@ -23,3 +23,4 @@ class Config(object):
         'https://emailqueue.emailsecurity.symantec.com/'
     SERVER_NAME = os.environ.get('SERVER_NAME')
     PREFERRED_URL_SCHEME = os.environ.get('PREFERRED_URL_SCHEME') or 'http'
+    SCHEDULER_API_ENABLED = os.environ.get('SCHEDULER_API_ENABLED') or False

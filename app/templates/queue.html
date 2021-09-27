@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% import 'bootstrap/form.html' as wtf %}
+
+{% block app_content %}
+    <h1>Queue Management</h1>
+    <p>This application monitors the Email.Cloud queue.</p>
+    <div class="row">
+        <div class="col-9">
+            <form class="form-inline">
+                <div class="form-group mb-2">
+                    <select id="domainname">
+                        <option value="global">Global</option>
+                    </select>
+                </div>
+                <div class="form-group mx-sm-1 mb-2">
+                    <input id="startdate" width="234" />
+                </div>
+                <div class="form-group mx-sm-1 mb-2">
+                    <input id="enddate" width="234" />
+                </div>
+                <div class="form-group mx-sm-1 mb-2">
+                    <button type="button" id="updatebutton" class="btn btn-primary" onclick="javascript:QueueChart('202101010000','202201010000', '')">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <canvas id="queueChart" width="600" height="400"></canvas>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+    
+    const CHART_COLORS = {
+        blue: 'rgb(166,206,227)',
+        darkblue: 'rgb(31,120,180)',
+        green: 'rgb(178,223,138)',
+        darkgreen: 'rgb(51,160,44)',
+        pink: 'rgb(251,154,153)',
+        red: 'rgb(227,26,28)',
+        lightorange: 'rgb(253,191,111)',
+        orange: 'rgb(255,127,0)',
+        lightpurple: 'rgb(202,178,214)',
+        purple: 'rgb(106,61,154)',
+        yellow: 'rgb(255,255,153)',
+        brown: 'rgb(177,89,40)'
+    };
+
+    const NAMED_COLORS = [
+        CHART_COLORS.blue,
+        CHART_COLORS.darkblue,
+        CHART_COLORS.green,
+        CHART_COLORS.darkgreen,
+        CHART_COLORS.pink,
+        CHART_COLORS.red,
+        CHART_COLORS.lightorange,
+        CHART_COLORS.orange,
+        CHART_COLORS.lightpurple,
+        CHART_COLORS.purple,
+        CHART_COLORS.yellow,
+        CHART_COLORS.brown
+    ];
+
+    function namedColor(index) {
+        return NAMED_COLORS[index % NAMED_COLORS.length];
+    }
+
+    var ctx = document.getElementById("queueChart").getContext("2d");
+    var QChart = new Chart(ctx)
+
+    QueueChart('202101010000','202201010000', '')
+
+    function QueueChart(start_date, end_date, domain) {
+        var data = data || {};
+        var url = "/data/" + start_date + "/" + end_date;
+
+        if (domain != '') {
+            url = url + '/' + domain
+        }
+
+        QChart.destroy();
+        QChart = new Chart(ctx, {
+            type: 'line',
+            data: {},
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero:true
+                        }
+                    }]
+                }
+            }
+        });
+
+        $.getJSON(url, data).done(function(response) {
+            QChart.data.labels = response.labels;
+
+            for (var i = 0; i < Object.keys(response.data).length; i++) {
+                const newDS = {
+                    label: Object.keys(response.data)[i],
+                    data: response.data[Object.keys(response.data)[i]],
+                    borderColor: namedColor(i),
+                    backgroundColor: namedColor(i)
+                }
+                QChart.data.datasets.push(newDS);
+            }
+
+            QChart.update(); // finally update our chart
+        });
+    }
+
+    $(document).ready(function() {
+        $('#startdate').datetimepicker({
+            uiLibrary: 'bootstrap4',
+            modal: false,
+            footer: true
+        });
+        $('#enddate').datetimepicker({
+            uiLibrary: 'bootstrap4',
+            modal: false,
+            footer: true
+        });
+    } );
+
+    </script>
+{% endblock %}
