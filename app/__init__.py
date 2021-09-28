@@ -79,7 +79,7 @@ def create_app(config_class=Config):
         app.logger.setLevel(logging.INFO)
         app.logger.info('Eqapi startup')
 
-    if os.environ.get('EQAPI_INIT') != 1:
+    if os.environ.get('EQAPI_INIT') != "1":
         from app.jobs import AddUpdateJob
 
         with app.app_context():
