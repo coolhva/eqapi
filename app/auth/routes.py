@@ -6,6 +6,7 @@ from app.auth import bp
 from app.auth.forms import LoginForm, RegistrationForm, \
     ResetPasswordRequestForm, ResetPasswordForm
 from app.models import User
+from app.settings import getSetting
 from app.auth.email import send_password_reset_email
 
 
@@ -38,6 +39,11 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = RegistrationForm()
+
+    if getSetting('disable_registration', '0') == '1':
+        flash('Registration of new users has been disabled.', 'warning')
+        return redirect(url_for('main.index'))
+
     if form.validate_on_submit():
         user = User(username=form.username.data,
                     email=form.email.data)

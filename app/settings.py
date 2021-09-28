@@ -2,9 +2,11 @@ from app import db
 from app.models import Setting
 
 
-def getSetting(name: str) -> str:
+def getSetting(name: str, default: str = "") -> str:
     value = Setting.query.filter_by(name=name).first()
-    return value
+    if value is None:
+        value = default
+    return str(value)
 
 
 def saveSetting(name: str, value: str) -> bool:

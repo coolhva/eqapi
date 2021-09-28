@@ -3,11 +3,12 @@ from flask import (render_template, flash, redirect, url_for, request,
 from flask_login import current_user, login_required
 from datetime import datetime
 from sqlalchemy.sql.elements import and_
-from app import db
+from app import db, scheduler
+from app.jobs import AddUpdateJob
 from app.models import DomainQueue, GlobalQueue, Domain
 from app.main.forms import EditProfileForm, SettingsForm
 from app.settings import getSetting, saveSetting
-from app.api import testConnection, queryQueue
+from app.api import testConnection
 from app.main import bp
 
 
@@ -40,8 +41,8 @@ def edit_profile():
 @bp.route('/queue', methods=['GET'])
 @login_required
 def queue():
-    queryQueue()
-    return render_template('queue.html', title='Queue')
+    domains = Domain.query.all()
+    return render_template('queue.html', title='Queue', domains=domains)
 
 
 @bp.route('/data/<from_date>/<to_date>',
@@ -74,7 +75,8 @@ def data(from_date, to_date, domain):
                 GlobalQueue.datetime.between(startdate, enddate)
             ).all()
         for entry in qdata:
-            rdata['labels'].append(entry.datetime)
+            rdata['labels'].append(datetime.strftime(
+                entry.datetime, "%Y-%m-%d %H:%M:%S"))
             rdata['data']['TotalMessagesInbound'].append(
                 entry.TotalMessagesInbound)
             rdata['data']['TotalMessagesOutbound'].append(
@@ -117,7 +119,8 @@ def data(from_date, to_date, domain):
                      Domain.domainname == domain)
             ).all()
         for entry in qdata:
-            rdata['labels'].append(entry.datetime)
+            rdata['labels'].append(datetime.strftime(
+                entry.datetime, "%Y-%m-%d %H:%M:%S"))
             rdata['data']['ReceiveQueueCountInbound'].append(
                 entry.ReceiveQueueCountInbound)
             rdata['data']['ReceiveQueueCountOutbound'].append(
@@ -149,19 +152,34 @@ def data(from_date, to_date, domain):
 @login_required
 def settings():
     form = SettingsForm()
+    job = scheduler.get_job('update_queue')
     if form.validate_on_submit():
-        result = testConnection(form.api_username.data, form.api_password.data)
-        if not result['status']:
-            flash(result['message'], 'danger')
-            return render_template('settings.html', title='Settings',
-                                   form=form)
-        saveSetting('api_username', form.api_username.data)
-        saveSetting('api_password', form.api_password.data)
-        flash('Connection to API successful, credentials saved', 'success')
+        saveSetting('update_queue_interval', form.interval.data)
+        saveSetting('disable_registration', form.disable_registration.data)
+
+        if (form.api_username.data != '' and form.api_password.data != ''):
+            result = testConnection(form.api_username.data,
+                                    form.api_password.data)
+            if not result['status']:
+                flash(result['message'], 'danger')
+                return render_template('settings.html', title='Settings',
+                                       form=form)
+            saveSetting('api_username', form.api_username.data)
+            saveSetting('api_password', form.api_password.data)
+            flash('Connection to API successful, settings saved', 'success')
+        else:
+            flash('Settings has been saved', 'success')
+
+        AddUpdateJob()
         return redirect(url_for('main.settings'))
     elif request.method == 'GET':
         form.api_username.data = getSetting('api_username')
         form.api_password.data = getSetting('api_password')
+        form.interval.data = getSetting('update_queue_interval', '300')
+        form.disable_registration.data = int(getSetting('disable_registration',
+                                                        '0'))
 
     return render_template('settings.html', title='Settings', form=form,
-                           last_error=getSetting('last_error'))
+                           last_error=getSetting('last_error'),
+                           job=datetime.strftime(
+                                job.next_run_time, "%Y-%m-%d %H:%M:%S"))

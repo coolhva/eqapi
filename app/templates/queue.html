@@ -3,13 +3,16 @@
 
 {% block app_content %}
     <h1>Queue Management</h1>
-    <p>This application monitors the Email.Cloud queue.</p>
+    <p>This application monitors the Email.Cloud queue. Time is in UTC.</p>
     <div class="row">
         <div class="col-9">
             <form class="form-inline">
                 <div class="form-group mb-2">
                     <select id="domainname">
                         <option value="global">Global</option>
+                        {% for domain in domains %}
+                        <option value="{{ domain.domainname.lower() }}">{{ domain.domainname }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="form-group mx-sm-1 mb-2">
@@ -19,7 +22,7 @@
                     <input id="enddate" width="234" />
                 </div>
                 <div class="form-group mx-sm-1 mb-2">
-                    <button type="button" id="updatebutton" class="btn btn-primary" onclick="javascript:QueueChart('202101010000','202201010000', '')">Update</button>
+                    <button type="button" id="updatebutton" class="btn btn-primary" onclick="javascript:updateChart()">Update</button>
                 </div>
             </form>
         </div>
@@ -70,7 +73,14 @@
     var ctx = document.getElementById("queueChart").getContext("2d");
     var QChart = new Chart(ctx)
 
-    QueueChart('202101010000','202201010000', '')
+    function fmtapidate(date) {
+        d = new Date().getFullYear();
+        d += ("0" + (date.getMonth() + 1)).slice(-2)
+        d += ("0" + date.getDate()).slice(-2)
+        d += ("0" + date.getHours()).slice(-2)
+        d += ("0" + date.getMinutes()).slice(-2)
+        return d
+    }
 
     function QueueChart(start_date, end_date, domain) {
         var data = data || {};
@@ -112,17 +122,55 @@
         });
     }
 
+    function updateChart() {
+        startdate = new Date(Date.parse(document.getElementById('startdate').value))
+        enddate = new Date(Date.parse(document.getElementById('enddate').value))
+        domain = ''
+
+        if (document.getElementById('domainname').value != 'global') {
+            domain = document.getElementById('domainname').value
+        }
+
+        QueueChart(fmtapidate(startdate),fmtapidate(enddate), domain)
+    }
+
     $(document).ready(function() {
+        var date = new Date();
+        var startdate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 
+                                 date.getUTCHours() -1, date.getUTCMinutes(), date.getUTCSeconds());
+        var enddate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 
+                                 date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds());
+
+        function fmtdate(date) {
+            d = new Date().getFullYear();
+            d += '-'
+            d += ("0" + (date.getMonth() + 1)).slice(-2)
+            d += '-'
+            d += ("0" + date.getDate()).slice(-2)
+            d += ' '
+            d += ("0" + date.getHours()).slice(-2)
+            d += ':'
+            d += ("0" + date.getMinutes()).slice(-2)
+            return d
+        }
+
         $('#startdate').datetimepicker({
+            format: 'yyyy-mm-dd HH:MM',
             uiLibrary: 'bootstrap4',
             modal: false,
-            footer: true
+            footer: true,
+            value: fmtdate(startdate)
         });
         $('#enddate').datetimepicker({
+            format: 'yyyy-mm-dd HH:MM',
             uiLibrary: 'bootstrap4',
             modal: false,
-            footer: true
+            footer: true,
+            value: fmtdate(enddate)
         });
+
+        QueueChart(fmtapidate(startdate),fmtapidate(enddate), '')
+
     } );
 
     </script>

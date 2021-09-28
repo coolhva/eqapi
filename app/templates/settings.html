@@ -7,7 +7,11 @@
         <div class="col-md-4">
             {{ wtf.render_form(form) }}
         </div>
-        {% if last_error is not none %}
+        <div class="col-md-4">
+            <div>Next query to queue API:</div>
+            <div>{{ job }}</div>
+        </div>
+        {% if last_error != "" %}
         <div class="col-md-4">
             <div>Last error from background task:</div>
             <div>{{ last_error }}</div>
