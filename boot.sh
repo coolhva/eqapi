@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 source venv/bin/activate
 mkdir ./db
 flask db upgrade

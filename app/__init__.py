@@ -82,7 +82,10 @@ def create_app(config_class=Config):
         from app.jobs import AddUpdateJob
 
         with app.app_context():
-            AddUpdateJob()
+            try:
+                AddUpdateJob()
+            except Exception:
+                app.logger.info('Adding update_queue job failed')
 
     return app
 

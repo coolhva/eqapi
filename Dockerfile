@@ -1,6 +1,6 @@
-FROM python:3.9-alpine
+FROM python:3.9-slim
 
-RUN adduser -D eqapi
+RUN adduser --disabled-password eqapi
 WORKDIR /home/eqapi
 
 COPY requirements.txt requirements.txt
