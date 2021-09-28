@@ -8,7 +8,6 @@
 
         {% block styles %}
             <!-- Bootstrap CSS -->
-            {{ bootstrap.load_css() }}
             <link rel="stylesheet" href="{{ url_for('static', filename='dataTables.bootstrap4.min.css') }}">
             <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-select.min.css') }}">
             <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
@@ -73,8 +72,10 @@
 
         {% block scripts %}
             <!-- Optional JavaScript -->
-            {{ bootstrap.load_js() }}
-            {{ moment.include_moment() }}
+            <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
+            <script src="{{ url_for('static', filename='popper.min.js') }}"></script>
+            <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+            <script src="{{ url_for('static', filename='moment-with-locales.min.js') }}"></script>
             <script src="{{ url_for('static', filename='jquery.dataTables.min.js') }}"></script>
             <script src="{{ url_for('static', filename='dataTables.bootstrap4.min.js') }}"></script>
             <script src="{{ url_for('static', filename='chart.min.js') }}"></script>
